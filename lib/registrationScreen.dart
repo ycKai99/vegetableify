@@ -8,6 +8,10 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
+  bool _rememberMe = false;
+  TextEditingController _emailController = new TextEditingController();
+  TextEditingController _passwordController = new TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -32,6 +36,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   child: Column(
                     children: [
                       TextField(
+                        controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           labelText: 'Email',
@@ -40,6 +45,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         ),
                       ),
                       TextField(
+                        controller: _passwordController,
                         decoration: InputDecoration(
                           labelText: 'Password',
                           hintText: '6 - 8 character',
@@ -55,6 +61,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           icon: Icon(Icons.lock, size: 20),
                         ),
                         obscureText: true,
+                      ),
+                      SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Checkbox(
+                              value: _rememberMe,
+                              onChanged: (bool value) {
+                                _onChange(value);
+                              }),
+                          Text("Remember me")
+                        ],
                       ),
                       SizedBox(height: 10),
                       MaterialButton(
@@ -89,4 +106,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   void _register() {}
+
+  void _onChange(bool value) {
+    setState(() {
+      _rememberMe = value;
+    });
+  }
 }

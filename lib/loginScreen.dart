@@ -82,13 +82,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 GestureDetector(
                   child: Text('Register New Account',
-                      style: TextStyle(fontSize: 16)),
+                      style: TextStyle(fontSize: 14)),
                   onTap: _regNewUser,
                 ),
                 SizedBox(height: 5),
                 GestureDetector(
                   child:
-                      Text('Forgot Password', style: TextStyle(fontSize: 16)),
+                      Text('Forgot Password', style: TextStyle(fontSize: 14)),
                   onTap: _forgotPassword,
                 ),
               ],
@@ -100,8 +100,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _onChange(bool value) {
-    String _email = _emailController.text.toString();
-    String _password = _passwordController.text.toString();
+    //String _email = _emailController.text.toString();
+    //String _password = _passwordController.text.toString();
+    setState(() {
+      _rememberMe = value;
+    });
   }
 
   void _login() {}
