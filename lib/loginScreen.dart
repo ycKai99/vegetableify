@@ -216,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _checkEmailPassword(String email, String password) {
     if (RegExp("\\w{1,}@\\w{2,10}(\\.\\w{2,10}){1,2}").hasMatch(email) ==
             true &&
-        RegExp("").hasMatch(password) == true) {
+        RegExp(r'^[a-zA-Z0-9]$').hasMatch(password) == true) {
       showToast(2);
       return;
     } else {
