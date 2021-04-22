@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'loginScreen.dart';
+
+/* Step for register user
+1. enter email and password format
+2. click rememberMe to save email and password
+3. click register
+ - check email and password format
+ - show confirm showDialog
+ - call register user method
+ - register success
+*/
 
 class RegistrationScreen extends StatefulWidget {
   @override
@@ -10,9 +21,15 @@ class RegistrationScreen extends StatefulWidget {
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _rememberMe = false;
+  SharedPreferences sharedPref;
   TextEditingController _emailController = new TextEditingController();
   TextEditingController _passwordController = new TextEditingController();
   TextEditingController _passwordConfController = new TextEditingController();
+  @override
+  void initState() {
+    loadPreference();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +67,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         controller: _passwordController,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          hintText: '6 - 8 character',
+                          hintText: '8 - 10 character',
                           icon: Icon(Icons.lock, size: 20),
                         ),
                         obscureText: true,
@@ -92,8 +109,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ),
               ), //register card
               GestureDetector(
-                child: Text('Already Have Account',
-                    style: TextStyle(fontSize: 16)),
+                child: Row(children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(68, 0, 0, 0),
+                    child: Text('Already Have Account ? ',
+                        style: TextStyle(fontSize: 14)),
+                  ),
+                  Text("Login",
+                      style: TextStyle(fontSize: 14, color: Colors.green)),
+                ]),
                 onTap: _alreadyReg,
               ),
             ]),
@@ -113,15 +137,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     String _password = _passwordController.text.toString();
     String _confPassword = _passwordConfController.text.toString();
     if (_email.isEmpty || _password.isEmpty || _confPassword.isEmpty) {
-      Fluttertoast.showToast(
-        msg: "Please enter your email and password",
-        timeInSecForIosWeb: 1,
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.greenAccent,
-        textColor: Colors.black,
-        fontSize: 15,
-      );
+      showToast(1);
       return;
     }
     showDialog(
@@ -129,7 +145,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         builder: (BuildContext context) {
           return AlertDialog(
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(15))),
+                borderRadius: BorderRadius.all(Radius.circular(20))),
             title: Text("Register "),
             content: new Container(
               height: 40,
@@ -156,28 +172,108 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             ],
           );
         });
-  }
+  } //end register
 
   void _onChange(bool value) {
+    String _email = _emailController.text.toString();
+    String _password = _passwordController.text.toString();
+    if (_email.isEmpty || _password.isEmpty) {
+      showToast(1);
+      return;
+    }
     setState(() {
       _rememberMe = value;
+      savePreference(value, _email, _password);
     });
-  }
+  } //end onChange
+
+  Future<void> savePreference(bool value, String email, String password) async {
+    sharedPref = await SharedPreferences.getInstance();
+    if (value) {
+      await sharedPref.setString("email", email);
+      await sharedPref.setString("password", password);
+      await sharedPref.setBool("rememberMe", value);
+      Fluttertoast.showToast(
+        msg: "Your email and password is saved",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.greenAccent,
+        textColor: Colors.black,
+        fontSize: 15,
+      );
+      return;
+    } else {
+      await sharedPref.setString("email", '');
+      await sharedPref.setString("password", '');
+      await sharedPref.setBool("rememberMe", value);
+      Fluttertoast.showToast(
+        msg: "Preference removed",
+        timeInSecForIosWeb: 1,
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.greenAccent,
+        textColor: Colors.black,
+        fontSize: 15,
+      );
+      setState(() {
+        _emailController.text = "";
+        _passwordController.text = "";
+        _passwordConfController.text = "";
+        _rememberMe = false;
+      });
+      return;
+    }
+  } //end savePreference
+
+  Future<void> loadPreference() async {
+    sharedPref = await SharedPreferences.getInstance();
+    String _email = sharedPref.getString("email") ?? '';
+    String _password = sharedPref.getString("password") ?? '';
+
+    _rememberMe = sharedPref.getBool("rememberMe") ?? false;
+
+    setState(() {
+      _emailController.text = _email;
+      _passwordController.text = _password;
+    });
+  } //end loadPreference
 
   void _registerUser(String email, String password) {
     http.post(Uri.parse("http://yck99.com/vegetableify/php/register_user.php"),
         body: {"email": email, "password": password}).then((response) {
       print(response.body);
       if (response.body == "success") {
+        showToast(2);
+      } else {
+        showToast(3);
+      }
+    });
+  } //end register
+
+  void showToast(int num) {
+    switch (num) {
+      case 1:
         Fluttertoast.showToast(
-            msg: "Registration Success",
+            msg: "Please enter your email or password",
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
             timeInSecForIosWeb: 1,
             backgroundColor: Colors.greenAccent,
             textColor: Colors.black,
             fontSize: 16);
-      } else {
+        break;
+      case 2:
+        Fluttertoast.showToast(
+            msg: "Register Success. Please check your email.",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.greenAccent,
+            textColor: Colors.black,
+            fontSize: 16);
+        break;
+      case 3:
         Fluttertoast.showToast(
             msg: "Cannot register using the same email",
             toastLength: Toast.LENGTH_SHORT,
@@ -186,7 +282,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             backgroundColor: Colors.greenAccent,
             textColor: Colors.black,
             fontSize: 16);
-      }
-    });
-  } //end register
-} //end register
+        break;
+
+      default:
+        Fluttertoast.showToast(
+            msg: "Please enter correct email or password",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.greenAccent,
+            textColor: Colors.black,
+            fontSize: 16);
+    }
+  } //end showError
+} //end register screen

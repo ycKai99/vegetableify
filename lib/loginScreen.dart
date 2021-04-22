@@ -2,7 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vegetableify/registrationScreen.dart';
+import 'mainScreen.dart';
+import 'package:http/http.dart' as http;
 
+//Step for login
+//1. enter email address and password
+//2.click rememberMe to save the email and password
+//3.click login button
+// - check email and password format
+//4. click forgot password
+// - show dialog
+// - submit email and call reset password method
+// - login success
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -57,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _passwordController,
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            hintText: '6 - 8 character',
+                            hintText: '8 - 10 character',
                             icon: Icon(Icons.lock, size: 20),
                           ),
                           obscureText: true,
@@ -78,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         MaterialButton(
                           highlightElevation: 10,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15)),
+                              borderRadius: BorderRadius.circular(20)),
                           minWidth: 150,
                           color: Colors.greenAccent,
                           child: Text('Login',
@@ -97,8 +108,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 SizedBox(height: 5),
                 GestureDetector(
-                  child:
-                      Text('Forgot Password', style: TextStyle(fontSize: 14)),
+                  child: Text('Forgot Password ?',
+                      style: TextStyle(
+                        fontSize: 14,
+                      )),
                   onTap: _forgotPassword,
                 ),
               ],
@@ -196,7 +209,12 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             actions: [
-              TextButton(child: Text("Submit"), onPressed: () {}),
+              TextButton(
+                  child: Text("Submit"),
+                  onPressed: () {
+                    print(_emailController.text);
+                    _resetPassword(_emailController.text);
+                  }),
               TextButton(
                   child: Text("Cancel"),
                   onPressed: () {
@@ -216,11 +234,14 @@ class _LoginScreenState extends State<LoginScreen> {
   void _checkEmailPassword(String email, String password) {
     if (RegExp("\\w{1,}@\\w{2,10}(\\.\\w{2,10}){1,2}").hasMatch(email) ==
             true &&
-        RegExp(r'^[a-zA-Z0-9]$').hasMatch(password) == true) {
+        RegExp(r"([a-zA-Z0-9])(){8,10}").hasMatch(password) == true) {
       showToast(2);
-      return;
     } else {
-      showToast(0);
+      if (email.isEmpty == true && password.isEmpty == true) {
+        showToast(1);
+      } else {
+        showToast(0);
+      }
     }
   } //end _checkEmailPassword
 
@@ -234,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
             timeInSecForIosWeb: 1,
             backgroundColor: Colors.greenAccent,
             textColor: Colors.black,
-            fontSize: 16);
+            fontSize: 15);
         break;
       case 2:
         Fluttertoast.showToast(
@@ -244,7 +265,9 @@ class _LoginScreenState extends State<LoginScreen> {
             timeInSecForIosWeb: 1,
             backgroundColor: Colors.greenAccent,
             textColor: Colors.black,
-            fontSize: 16);
+            fontSize: 15);
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => MainScreen()));
         break;
       default:
         Fluttertoast.showToast(
@@ -254,7 +277,33 @@ class _LoginScreenState extends State<LoginScreen> {
             timeInSecForIosWeb: 1,
             backgroundColor: Colors.greenAccent,
             textColor: Colors.black,
-            fontSize: 16);
+            fontSize: 15);
     }
-  } //end showError
+  }
+
+  void _resetPassword(String email) {
+    http.post(Uri.parse("http://yck99.com/vegetableify/php/reset_password.php"),
+        body: {"email": email}).then((response) {
+      print(response.body);
+      if (response.body == "success") {
+        Fluttertoast.showToast(
+            msg: "Success",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.greenAccent,
+            textColor: Colors.black,
+            fontSize: 15);
+      } else {
+        Fluttertoast.showToast(
+            msg: "Failed",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.greenAccent,
+            textColor: Colors.black,
+            fontSize: 15);
+      }
+    });
+  } //end _resetPassword
 } //end login screen
