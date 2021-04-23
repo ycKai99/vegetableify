@@ -39,14 +39,10 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: <Widget>[
-                // Container(
-                //     margin: EdgeInsets.all(40),
-                //     child: Image.asset(
-                //         'assets/images/5b8f4891e7bce763734073aa.jpg')
-                // ),
-
+                Container(
+                    margin: EdgeInsets.fromLTRB(25, 20, 20, 10),
+                    child: Image.asset('assets/images/logo.png')),
                 SizedBox(height: 5),
-
                 Card(
                   margin: EdgeInsets.fromLTRB(30, 10, 30, 20),
                   elevation: 8,
@@ -55,6 +51,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
                     child: Column(
                       children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 10, 0, 0),
+                          child: Text('LOGIN', style: TextStyle(fontSize: 25)),
+                        ),
                         TextField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -78,6 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Row(
                           children: [
                             Checkbox(
+                                tristate: true,
                                 value: _rememberMe,
                                 onChanged: (bool value) {
                                   _onChange(value);
@@ -108,10 +109,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 SizedBox(height: 5),
                 GestureDetector(
-                  child: Text('Forgot Password ?',
-                      style: TextStyle(
-                        fontSize: 14,
-                      )),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 15),
+                    child: Text('Forgot Password ?',
+                        style: TextStyle(
+                          fontSize: 14,
+                        )),
+                  ),
                   onTap: _forgotPassword,
                 ),
               ],
@@ -232,13 +236,16 @@ class _LoginScreenState extends State<LoginScreen> {
   } //end login
 
   void _checkEmailPassword(String email, String password) {
-    if (RegExp("\\w{1,}@\\w{2,10}(\\.\\w{2,10}){1,2}").hasMatch(email) ==
-            true &&
-        RegExp(r"([a-zA-Z0-9])(){8,10}").hasMatch(password) == true) {
-      showToast(2);
+    if (email.isEmpty == true || password.isEmpty == true) {
+      showToast(1);
     } else {
-      if (email.isEmpty == true && password.isEmpty == true) {
-        showToast(1);
+      if (RegExp(r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$')
+                  .hasMatch(email) ==
+              true &&
+          RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,10}$')
+                  .hasMatch(password) ==
+              true) {
+        showToast(2);
       } else {
         showToast(0);
       }
@@ -306,4 +313,5 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     });
   } //end _resetPassword
+
 } //end login screen

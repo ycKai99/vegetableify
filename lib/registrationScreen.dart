@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'loginScreen.dart';
+import 'package:flutter/services.dart';
 
 /* Step for register user
 1. enter email and password format
-2. click rememberMe to save email and password
-3. click register
- - check email and password format
- - show confirm showDialog
- - call register user method
- - register success
+
+2. click register
+- check email and password format
+- show confirm showDialog
+- call register user method
+- register success
 */
 
 class RegistrationScreen extends StatefulWidget {
@@ -20,16 +20,10 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
-  bool _rememberMe = false;
-  SharedPreferences sharedPref;
+  bool _showPassword = true;
   TextEditingController _emailController = new TextEditingController();
   TextEditingController _passwordController = new TextEditingController();
   TextEditingController _passwordConfController = new TextEditingController();
-  @override
-  void initState() {
-    loadPreference();
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,10 +33,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         body: Center(
           child: SingleChildScrollView(
             child: Column(children: <Widget>[
-              // Container(
-              //     margin: EdgeInsets.all(40),
-              //     child: Image.asset(
-              //         'assets/images/5b8f4891e7bce763734073aa.jpg')),
+              Container(
+                  margin: EdgeInsets.fromLTRB(25, 20, 20, 10),
+                  child: Image.asset('assets/images/logo.png')),
 
               SizedBox(height: 5),
 
@@ -54,44 +47,57 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
                   child: Column(
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 13, 0, 0),
+                        child: Text('REGISTER', style: TextStyle(fontSize: 23)),
+                      ),
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          labelText: 'Email',
-                          hintText: 'Please enter valid email',
+                          labelText: 'Email *',
+                          hintText: 'Your email address',
                           icon: Icon(Icons.email, size: 20),
                         ),
                       ),
                       TextField(
                         controller: _passwordController,
                         decoration: InputDecoration(
-                          labelText: 'Password',
+                          labelText: 'Password *',
                           hintText: '8 - 10 character',
                           icon: Icon(Icons.lock, size: 20),
+                          suffix: InkWell(
+                            onTap: _onClick,
+                            child: Icon(Icons.visibility),
+                          ),
                         ),
-                        obscureText: true,
+                        obscureText: _showPassword,
                       ),
                       SizedBox(height: 10),
                       TextField(
                         controller: _passwordConfController,
                         decoration: InputDecoration(
-                          labelText: 'Enter Password Again',
-                          hintText: '6 - 8 character',
+                          labelText: 'Enter Password Again *',
+                          hintText: '8 - 10 character',
                           icon: Icon(Icons.lock, size: 20),
+                          suffix: InkWell(
+                            onTap: _onClick,
+                            child: Icon(Icons.visibility),
+                          ),
                         ),
-                        obscureText: true,
+                        obscureText: _showPassword,
                       ),
                       SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Checkbox(
-                              value: _rememberMe,
-                              onChanged: (bool value) {
-                                _onChange(value);
-                              }),
-                          Text("Remember me")
-                        ],
+                      GestureDetector(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 0, 80, 0),
+                          child: Text(' * Password format',
+                              style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                        onTap: _passwordFormat,
                       ),
                       SizedBox(height: 10),
                       MaterialButton(
@@ -111,12 +117,20 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               GestureDetector(
                 child: Row(children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(68, 0, 0, 0),
+                    padding: const EdgeInsets.fromLTRB(60, 0, 0, 15),
                     child: Text('Already Have Account ? ',
-                        style: TextStyle(fontSize: 14)),
+                        style: TextStyle(fontSize: 15)),
                   ),
-                  Text("Login",
-                      style: TextStyle(fontSize: 14, color: Colors.green)),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 15),
+                    child: Text(
+                      "Login",
+                      style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.green,
+                          decoration: TextDecoration.underline),
+                    ),
+                  ),
                 ]),
                 onTap: _alreadyReg,
               ),
@@ -159,7 +173,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           fontWeight: FontWeight.bold)),
                   onPressed: () {
                     Navigator.of(context).pop();
-                    _registerUser(_email, _password);
+                    _checkEmailPassword(_email, _password, _confPassword);
                   }),
               TextButton(
                   child: Text("Cancel",
@@ -174,71 +188,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         });
   } //end register
 
-  void _onChange(bool value) {
-    String _email = _emailController.text.toString();
-    String _password = _passwordController.text.toString();
-    if (_email.isEmpty || _password.isEmpty) {
-      showToast(1);
-      return;
-    }
-    setState(() {
-      _rememberMe = value;
-      savePreference(value, _email, _password);
-    });
-  } //end onChange
-
-  Future<void> savePreference(bool value, String email, String password) async {
-    sharedPref = await SharedPreferences.getInstance();
-    if (value) {
-      await sharedPref.setString("email", email);
-      await sharedPref.setString("password", password);
-      await sharedPref.setBool("rememberMe", value);
-      Fluttertoast.showToast(
-        msg: "Your email and password is saved",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.greenAccent,
-        textColor: Colors.black,
-        fontSize: 15,
-      );
-      return;
-    } else {
-      await sharedPref.setString("email", '');
-      await sharedPref.setString("password", '');
-      await sharedPref.setBool("rememberMe", value);
-      Fluttertoast.showToast(
-        msg: "Preference removed",
-        timeInSecForIosWeb: 1,
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.greenAccent,
-        textColor: Colors.black,
-        fontSize: 15,
-      );
-      setState(() {
-        _emailController.text = "";
-        _passwordController.text = "";
-        _passwordConfController.text = "";
-        _rememberMe = false;
-      });
-      return;
-    }
-  } //end savePreference
-
-  Future<void> loadPreference() async {
-    sharedPref = await SharedPreferences.getInstance();
-    String _email = sharedPref.getString("email") ?? '';
-    String _password = sharedPref.getString("password") ?? '';
-
-    _rememberMe = sharedPref.getBool("rememberMe") ?? false;
-
-    setState(() {
-      _emailController.text = _email;
-      _passwordController.text = _password;
-    });
-  } //end loadPreference
-
   void _registerUser(String email, String password) {
     http.post(Uri.parse("http://yck99.com/vegetableify/php/register_user.php"),
         body: {"email": email, "password": password}).then((response) {
@@ -250,6 +199,33 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       }
     });
   } //end register
+
+  void _checkEmailPassword(String email, String password, String confPassword) {
+    if (email.isEmpty == true ||
+        password.isEmpty == true ||
+        confPassword.isEmpty == true) {
+      showToast(1);
+      return;
+    } else {
+      if (password != confPassword) {
+        showToast(4);
+        return;
+      } else {
+        if (RegExp(r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$')
+                    .hasMatch(email) ==
+                true &&
+            RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,10}$')
+                    .hasMatch(password) ==
+                true) {
+          showToast(2);
+          _registerUser(email, password);
+          return;
+        } else {
+          showToast(0);
+        }
+      }
+    }
+  } //end _checkEmailPassword
 
   void showToast(int num) {
     switch (num) {
@@ -283,6 +259,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             textColor: Colors.black,
             fontSize: 16);
         break;
+      case 4:
+        Fluttertoast.showToast(
+            msg: "Please enter the same password",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.greenAccent,
+            textColor: Colors.black,
+            fontSize: 16);
+        break;
 
       default:
         Fluttertoast.showToast(
@@ -295,4 +281,66 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             fontSize: 16);
     }
   } //end showError
+
+  void _onClick() {
+    setState(() {
+      _showPassword = !_showPassword;
+    });
+  }
+
+  void _passwordFormat() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(20))),
+            title: Text("Password Format "),
+            content: new Container(
+              height: 100,
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Text(
+                        '- Minimum 1 upper case',
+                        textAlign: TextAlign.left,
+                      ),
+                      Text(
+                        '- Minimum 1 lower case',
+                        textAlign: TextAlign.left,
+                      ),
+                      Text(
+                        '- Minimum 1 numeric case',
+                        textAlign: TextAlign.left,
+                      ),
+                      Text(
+                        '- Minimum 1 special case',
+                        textAlign: TextAlign.left,
+                      ),
+                      Text(
+                        '- Common allow character',
+                        textAlign: TextAlign.left,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                child: TextButton(
+                    child: Text("OK",
+                        style: TextStyle(
+                            color: Colors.greenAccent,
+                            fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    }),
+              ),
+            ],
+          );
+        });
+  }
 } //end register screen
